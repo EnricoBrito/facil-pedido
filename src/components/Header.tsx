@@ -21,7 +21,7 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3 md:px-8">
         {/* Logo */}
         <Link to="/" className="shrink-0">
-          <img src={logo} alt="Fácil Pedido" className="h-10 md:h-12 w-auto" />
+          <img src={logo} alt="Fácil Pedido" className="h-[50px] md:h-[70px] w-auto" />
         </Link>
 
         {/* Search */}

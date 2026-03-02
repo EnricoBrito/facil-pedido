@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
+import Criar from "./Criar";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ const Login = () => {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link to="/">
-            <img src={logo} alt="Fácil Pedido" className="mx-auto h-14 w-auto" />
+            <img src={logo} alt="Fácil Pedido" className="mx-auto h-24 w-auto" />
           </Link>
         </div>
 
@@ -52,7 +53,7 @@ const Login = () => {
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
             Não tem conta?{" "}
-            <Link to="#" className="font-medium text-accent hover:underline">
+            <Link to="/Criar" className="font-medium text-accent hover:underline">
               Criar conta
             </Link>
           </p>

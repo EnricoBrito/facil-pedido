@@ -10,6 +10,7 @@ import Cart from "./pages/Cart";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/AllProducts";
 import NotFound from "./pages/NotFound";
+import Criar from "./pages/Criar";
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login />} /> 
+            <Route path="/criar" element={<Criar />} /> 
             <Route path="/carrinho" element={<Cart />} />
             <Route path="/produto/:id" element={<ProductDetail />} />
             <Route path="/produtos" element={<AllProducts />} />
