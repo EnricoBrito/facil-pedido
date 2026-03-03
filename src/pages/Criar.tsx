@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 
-
-const Login = () => {
+const Criar = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +24,16 @@ const Login = () => {
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-medium">
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Nome</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Seu nome completo"
+              />
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
               <input
@@ -43,18 +54,28 @@ const Login = () => {
                 placeholder="••••••••"
               />
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Confirmar Senha</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="••••••••"
+              />
+            </div>
             <button
               type="submit"
               className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-soft transition-all hover:bg-amber-dark"
             >
-              Entrar
+              Criar Conta
             </button>
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            Não tem conta?{" "}
-            <Link to="/Criar" className="font-medium text-accent hover:underline">
-              Criar conta
+            Já tem conta?{" "}
+            <Link to="/login" className="font-medium text-accent hover:underline">
+              Entrar
             </Link>
           </p>
         </div>
@@ -63,4 +84,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Criar;
