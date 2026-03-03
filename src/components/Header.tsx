@@ -1,11 +1,13 @@
-import { Search, ShoppingCart, User } from "lucide-react";
+import { Search, ShoppingCart, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
 const Header = () => {
   const { itemCount } = useCart();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -14,6 +16,17 @@ const Header = () => {
     if (searchQuery.trim()) {
       navigate(`/produtos?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  const roleLabel: Record<string, string> = {
+    admin: "Admin",
+    empresa: "Empresa",
+    cliente: "Cliente",
   };
 
   return (
@@ -42,14 +55,44 @@ const Header = () => {
         </form>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Link
-            to="/login"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-secondary"
-          >
-            <User className="h-5 w-5" />
-            <span className="hidden md:inline">Entrar</span>
-          </Link>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-secondary"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="hidden md:inline">Dashboard</span>
+            </Link>
+          )}
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-1">
+              <span className="hidden md:flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground">
+                <User className="h-3.5 w-3.5" />
+                {user?.username}
+                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                  {roleLabel[user?.role ?? ""] ?? ""}
+                </span>
+              </span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-secondary"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="hidden md:inline">Sair</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-secondary"
+            >
+              <User className="h-5 w-5" />
+              <span className="hidden md:inline">Entrar</span>
+            </Link>
+          )}
+
           <Link
             to="/carrinho"
             className="relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-secondary"
