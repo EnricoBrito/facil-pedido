@@ -1,12 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { calculatePrice } from "@/services/PricingService";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem, subtotal, total, shipping, setShipping } = useCart();
+  const { items, updateQuantity, removeItem, shipping, setShipping } = useCart();
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [cep, setCep] = useState("");
 
   const formatPrice = (value: number) =>
@@ -15,6 +19,22 @@ const Cart = () => {
   const handleCalcShipping = () => {
     if (cep.length >= 8) {
       setShipping(29.9);
+    }
+  };
+
+  // Role-based subtotal
+  const roleSubtotal = items.reduce((sum, item) => {
+    const pricing = calculatePrice(item.product.price, item.quantity, user?.role ?? null);
+    return sum + pricing.finalPrice * item.quantity;
+  }, 0);
+
+  const roleTotal = roleSubtotal + (shipping ?? 0);
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    } else {
+      navigate("/checkout");
     }
   };
 
@@ -48,29 +68,35 @@ const Cart = () => {
 
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => (
-                <div key={item.product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft">
-                  <img src={item.product.image} alt={item.product.name} className="h-24 w-24 rounded-lg bg-sand object-contain p-2" />
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div>
-                      <h3 className="font-medium text-foreground">{item.product.name}</h3>
-                      <p className="text-lg font-bold text-foreground">{formatPrice(item.product.price)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="rounded-md border border-border p-1 hover:bg-secondary">
-                        <Minus className="h-4 w-4 text-foreground" />
-                      </button>
-                      <span className="w-6 text-center text-sm font-medium text-foreground">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="rounded-md border border-border p-1 hover:bg-secondary">
-                        <Plus className="h-4 w-4 text-foreground" />
-                      </button>
-                      <button onClick={() => removeItem(item.product.id)} className="ml-auto text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+              {items.map((item) => {
+                const pricing = calculatePrice(item.product.price, item.quantity, user?.role ?? null);
+                return (
+                  <div key={item.product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft">
+                    <img src={item.product.image} alt={item.product.name} className="h-24 w-24 rounded-lg bg-sand object-contain p-2" />
+                    <div className="flex flex-1 flex-col justify-between">
+                      <div>
+                        <h3 className="font-medium text-foreground">{item.product.name}</h3>
+                        <p className="text-lg font-bold text-foreground">{formatPrice(pricing.finalPrice)}</p>
+                        {pricing.discountPercent > 0 && (
+                          <p className="text-xs text-accent">-{pricing.discountPercent}% desconto empresa</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="rounded-md border border-border p-1 hover:bg-secondary">
+                          <Minus className="h-4 w-4 text-foreground" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-medium text-foreground">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="rounded-md border border-border p-1 hover:bg-secondary">
+                          <Plus className="h-4 w-4 text-foreground" />
+                        </button>
+                        <button onClick={() => removeItem(item.product.id)} className="ml-auto text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6 shadow-soft h-fit">
@@ -78,7 +104,7 @@ const Cart = () => {
               <div className="mb-4 space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span>{formatPrice(roleSubtotal)}</span>
                 </div>
                 {shipping !== null && (
                   <div className="flex justify-between text-muted-foreground">
@@ -88,7 +114,7 @@ const Cart = () => {
                 )}
                 <div className="flex justify-between border-t border-border pt-2 text-base font-bold text-foreground">
                   <span>Total</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>{formatPrice(roleTotal)}</span>
                 </div>
               </div>
 
@@ -107,12 +133,12 @@ const Cart = () => {
                 </div>
               </div>
 
-              <Link
-                to="/login"
+              <button
+                onClick={handleCheckout}
                 className="block w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold text-primary-foreground hover:bg-amber-dark"
               >
                 Finalizar Compra
-              </Link>
+              </button>
             </div>
           </div>
         </div>

@@ -1,17 +1,26 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { calculatePrice, getVolumeDiscount } from "@/services/PricingService";
+import { sendSimulatedPurchase } from "@/services/WebhookService";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PediAI from "@/components/PediAI";
 import { useState } from "react";
-import { Star, ArrowLeft } from "lucide-react";
+import { Star, ArrowLeft, Loader2, Package } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const product = products.find((p) => p.id === id);
   const { addItem } = useCart();
+  const { user, isAuthenticated, isAdmin, isEmpresa } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedColor, setSelectedColor] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [simulating, setSimulating] = useState(false);
 
   if (!product) {
     return (
@@ -27,6 +36,43 @@ const ProductDetail = () => {
 
   const formatPrice = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const pricing = calculatePrice(product.price, quantity, user?.role ?? null);
+  const showStock = isEmpresa || isAdmin;
+  const volumeDiscount = getVolumeDiscount(quantity);
+
+  const handleBuy = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    addItem(product);
+    navigate("/checkout");
+  };
+
+  const handleSimulate = async () => {
+    setSimulating(true);
+    try {
+      await sendSimulatedPurchase({
+        productId: product.id,
+        productName: product.name,
+        quantity,
+        email: user?.email ?? "",
+      });
+      toast({
+        title: "Simulação enviada",
+        description: "Webhook de simulação disparado com sucesso.",
+      });
+    } catch {
+      toast({
+        title: "Erro na simulação",
+        description: "Não foi possível disparar o webhook.",
+        variant: "destructive",
+      });
+    } finally {
+      setSimulating(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -50,6 +96,11 @@ const ProductDetail = () => {
                 <span className="text-sm font-medium text-foreground">
                   {product.inStock ? "Produto em estoque" : "Produto indisponível"}
                 </span>
+                {showStock && product.inStock && (
+                  <span className="ml-2 flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                    <Package className="h-3 w-3" /> {product.stock} un
+                  </span>
+                )}
               </div>
 
               <h1 className="mb-3 text-3xl font-bold text-foreground">{product.name}</h1>
@@ -79,6 +130,39 @@ const ProductDetail = () => {
                 </div>
               </div>
 
+              {/* Quantity (empresa/admin) */}
+              {(isEmpresa || isAdmin) && (
+                <div className="mb-6">
+                  <p className="mb-2 text-sm font-medium text-foreground">Quantidade</p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="rounded-md border border-border px-3 py-1 text-foreground hover:bg-secondary"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-20 rounded-lg border border-border bg-background px-3 py-1.5 text-center text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="rounded-md border border-border px-3 py-1 text-foreground hover:bg-secondary"
+                    >
+                      +
+                    </button>
+                    {isEmpresa && volumeDiscount > 0 && (
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-accent">
+                        -{volumeDiscount}% desconto volume
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Specs */}
               <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-secondary p-4 text-sm">
                 <div><span className="text-muted-foreground">Dimensões:</span> <span className="font-medium text-foreground">{product.dimensions}</span></div>
@@ -92,8 +176,20 @@ const ProductDetail = () => {
                 {product.originalPrice && (
                   <p className="text-sm text-muted-foreground line-through">{formatPrice(product.originalPrice)}</p>
                 )}
-                <p className="text-3xl font-bold text-foreground">{formatPrice(product.price)}</p>
-                <p className="text-sm text-muted-foreground">ou 12x de {formatPrice(product.price / 12)}</p>
+                <p className="text-3xl font-bold text-foreground">{formatPrice(pricing.finalPrice)}</p>
+                {isEmpresa && pricing.discountPercent > 0 && (
+                  <p className="text-sm font-medium text-accent">
+                    Preço empresa com {pricing.discountPercent}% de desconto
+                  </p>
+                )}
+                {isAdmin && (
+                  <div className="mt-2 rounded-lg bg-secondary p-3 text-xs space-y-1">
+                    <p className="text-muted-foreground">Preço cliente: <span className="font-medium text-foreground">{formatPrice(product.price)}</span></p>
+                    <p className="text-muted-foreground">Preço empresa (10un): <span className="font-medium text-foreground">{formatPrice(calculatePrice(product.price, 10, "empresa").finalPrice)}</span></p>
+                    <p className="text-muted-foreground">Margem simulada: <span className="font-medium text-accent">35%</span></p>
+                  </div>
+                )}
+                <p className="mt-1 text-sm text-muted-foreground">ou 12x de {formatPrice(pricing.finalPrice / 12)}</p>
               </div>
 
               {/* Actions */}
@@ -105,12 +201,22 @@ const ProductDetail = () => {
                   >
                     Adicionar ao Carrinho
                   </button>
-                  <Link
-                    to="/login"
+                  <button
+                    onClick={handleBuy}
                     className="rounded-lg border-2 border-accent bg-transparent px-8 py-3.5 text-center text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
                   >
                     Comprar Agora
-                  </Link>
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={handleSimulate}
+                      disabled={simulating}
+                      className="flex items-center justify-center gap-2 rounded-lg border-2 border-border bg-secondary px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-border disabled:opacity-50"
+                    >
+                      {simulating && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Simular Compra
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button className="rounded-lg border-2 border-primary bg-transparent px-8 py-3.5 text-sm font-semibold text-accent hover:bg-primary/10">
