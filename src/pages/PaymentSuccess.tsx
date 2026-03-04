@@ -2,13 +2,9 @@ import { Link } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useCart } from "@/contexts/CartContext";
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 
 const PaymentSuccess = () => {
-  const { items } = useCart();
-
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -26,12 +22,20 @@ const PaymentSuccess = () => {
           <p className="mb-8 text-muted-foreground">
             Seu pedido foi processado com sucesso. Você receberá um e-mail de confirmação em breve.
           </p>
-          <Link
-            to="/"
-            className="inline-block rounded-lg bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-amber-dark"
-          >
-            Voltar às Compras
-          </Link>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link
+              to="/historico"
+              className="inline-block rounded-lg border-2 border-accent bg-transparent px-8 py-3 text-sm font-semibold text-accent hover:bg-accent hover:text-accent-foreground"
+            >
+              Ver Meus Pedidos
+            </Link>
+            <Link
+              to="/"
+              className="inline-block rounded-lg bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-amber-dark"
+            >
+              Voltar às Compras
+            </Link>
+          </div>
         </motion.div>
       </main>
       <Footer />
