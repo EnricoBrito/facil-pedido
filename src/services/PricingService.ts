@@ -9,16 +9,18 @@ export interface PricingResult {
   empresaPrice?: number;
 }
 
+const DESCONTO_BASE_EMPRESA = 3;
+
 const VOLUME_DISCOUNTS = [
   { min: 100, percent: 15 },
   { min: 30, percent: 10 },
   { min: 10, percent: 5 },
-  { min: 1, percent: 0 },
+  { min: 1, percent: DESCONTO_BASE_EMPRESA },
 ];
 
 export function getVolumeDiscount(quantity: number): number {
   const tier = VOLUME_DISCOUNTS.find((t) => quantity >= t.min);
-  return tier ? tier.percent : 0;
+  return tier ? tier.percent : DESCONTO_BASE_EMPRESA;
 }
 
 export function calculatePrice(
@@ -29,22 +31,34 @@ export function calculatePrice(
   if (role === "empresa") {
     const discountPercent = getVolumeDiscount(quantity);
     const discount = basePrice * (discountPercent / 100);
-    const finalPrice = basePrice - discount;
+    let finalPrice = basePrice - discount;
+
+    // Proteção: empresa NUNCA pode pagar mais que cliente
+    if (finalPrice > basePrice) {
+      console.error("[ServicoPreco] ERRO: preço empresa maior que cliente. Aplicando fallback.");
+      finalPrice = basePrice * (1 - DESCONTO_BASE_EMPRESA / 100);
+    }
+
     return { basePrice, finalPrice, discount, discountPercent };
   }
 
   if (role === "admin") {
     const empresaDiscount = getVolumeDiscount(quantity);
     const empresaPrice = basePrice * (1 - empresaDiscount / 100);
+
+    // Proteção admin
+    const safeEmpresaPrice = empresaPrice > basePrice ? basePrice * 0.97 : empresaPrice;
+
     return {
       basePrice,
       finalPrice: basePrice,
       discount: 0,
       discountPercent: 0,
       marginPercent: 35,
-      empresaPrice,
+      empresaPrice: safeEmpresaPrice,
     };
   }
 
+  // Cliente e visitante: preço base
   return { basePrice, finalPrice: basePrice, discount: 0, discountPercent: 0 };
 }

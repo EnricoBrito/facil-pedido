@@ -15,7 +15,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const product = products.find((p) => p.id === id);
   const { addItem } = useCart();
-  const { user, isAuthenticated, isAdmin, isEmpresa } = useAuth();
+  const { user, isAuthenticated, isAdmin, isEmpresa, temPermissao } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedColor, setSelectedColor] = useState(0);
@@ -38,7 +38,7 @@ const ProductDetail = () => {
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const pricing = calculatePrice(product.price, quantity, user?.role ?? null);
-  const showStock = isEmpresa || isAdmin;
+  const showStock = temPermissao("VER_ESTOQUE");
   const volumeDiscount = getVolumeDiscount(quantity);
 
   const handleBuy = () => {
@@ -46,8 +46,22 @@ const ProductDetail = () => {
       navigate("/login");
       return;
     }
-    addItem(product);
+    // Validar estoque
+    if (quantity > product.stock) {
+      toast({ title: "Estoque insuficiente", description: `Apenas ${product.stock} unidades disponíveis.`, variant: "destructive" });
+      return;
+    }
+    for (let i = 0; i < quantity; i++) addItem(product);
     navigate("/checkout");
+  };
+
+  const handleAddToCart = () => {
+    if (quantity > product.stock) {
+      toast({ title: "Estoque insuficiente", description: `Apenas ${product.stock} unidades disponíveis.`, variant: "destructive" });
+      return;
+    }
+    for (let i = 0; i < quantity; i++) addItem(product);
+    toast({ title: "Adicionado!", description: `${product.name} adicionado ao carrinho.` });
   };
 
   const handleSimulate = async () => {
@@ -59,16 +73,9 @@ const ProductDetail = () => {
         quantity,
         email: user?.email ?? "",
       });
-      toast({
-        title: "Simulação enviada",
-        description: "Webhook de simulação disparado com sucesso.",
-      });
+      toast({ title: "Simulação enviada", description: "Webhook de simulação disparado com sucesso." });
     } catch {
-      toast({
-        title: "Erro na simulação",
-        description: "Não foi possível disparar o webhook.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro na simulação", description: "Não foi possível disparar o webhook.", variant: "destructive" });
     } finally {
       setSimulating(false);
     }
@@ -144,19 +151,20 @@ const ProductDetail = () => {
                     <input
                       type="number"
                       min={1}
+                      max={product.stock}
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) => setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))}
                       className="w-20 rounded-lg border border-border bg-background px-3 py-1.5 text-center text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                       className="rounded-md border border-border px-3 py-1 text-foreground hover:bg-secondary"
                     >
                       +
                     </button>
                     {isEmpresa && volumeDiscount > 0 && (
                       <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-accent">
-                        -{volumeDiscount}% desconto volume
+                        -{volumeDiscount}% desconto
                       </span>
                     )}
                   </div>
@@ -182,9 +190,10 @@ const ProductDetail = () => {
                     Preço empresa com {pricing.discountPercent}% de desconto
                   </p>
                 )}
-                {isAdmin && (
+                {isAdmin && temPermissao("VER_PRECO_INTERNO") && (
                   <div className="mt-2 rounded-lg bg-secondary p-3 text-xs space-y-1">
                     <p className="text-muted-foreground">Preço cliente: <span className="font-medium text-foreground">{formatPrice(product.price)}</span></p>
+                    <p className="text-muted-foreground">Preço empresa (1un): <span className="font-medium text-foreground">{formatPrice(calculatePrice(product.price, 1, "empresa").finalPrice)}</span></p>
                     <p className="text-muted-foreground">Preço empresa (10un): <span className="font-medium text-foreground">{formatPrice(calculatePrice(product.price, 10, "empresa").finalPrice)}</span></p>
                     <p className="text-muted-foreground">Margem simulada: <span className="font-medium text-accent">35%</span></p>
                   </div>
@@ -196,7 +205,7 @@ const ProductDetail = () => {
               {product.inStock ? (
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
-                    onClick={() => addItem(product)}
+                    onClick={handleAddToCart}
                     className="rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-medium hover:bg-amber-dark"
                   >
                     Adicionar ao Carrinho
@@ -207,7 +216,7 @@ const ProductDetail = () => {
                   >
                     Comprar Agora
                   </button>
-                  {isAdmin && (
+                  {isAdmin && temPermissao("SIMULAR_COMPRA") && (
                     <button
                       onClick={handleSimulate}
                       disabled={simulating}
