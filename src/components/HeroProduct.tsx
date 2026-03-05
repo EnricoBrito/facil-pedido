@@ -14,14 +14,13 @@ const HeroProduct = () => {
   return (
     <section className="bg-card py-12 md:py-20">
       <div className="container mx-auto px-4 md:px-8">
-        <motion.p
+      <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground"
-        >
-          Produto da Semana
-        </motion.p>
+          className="mt-1 mb-8 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Produto da Semana
+       </motion.p>
 
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-8 md:flex-row md:gap-16">
           {/* Image */}
@@ -31,7 +30,7 @@ const HeroProduct = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex-1"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-sand p-6 md:p-10">
+            <div className="relative overflow-hidden rounded-2xl p-6 md:p-10">
               {product.discount && (
                 <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                   -{product.discount}%

@@ -21,7 +21,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
         to={`/produto/${product.id}`}
         className="group block overflow-hidden rounded-xl bg-card shadow-soft transition-all hover:shadow-medium"
       >
-        <div className="relative overflow-hidden bg-sand p-4">
+        <div className="relative overflow-hidden p-4">
           <img
             src={product.image}
             alt={product.name}

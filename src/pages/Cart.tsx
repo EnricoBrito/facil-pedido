@@ -71,7 +71,7 @@ const Cart = () => {
             <div className="lg:col-span-2 space-y-4">
               {itensComPreco.map(({ item, pricing }) => (
                 <div key={item.product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft">
-                  <img src={item.product.image} alt={item.product.name} className="h-24 w-24 rounded-lg bg-sand object-contain p-2" />
+                  <img src={item.product.image} alt={item.product.name} className="h-24 w-24 rounded-lg object-contain p-2" />
                   <div className="flex flex-1 flex-col justify-between">
                     <div>
                       <h3 className="font-medium text-foreground">{item.product.name}</h3>

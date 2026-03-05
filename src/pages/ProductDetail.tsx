@@ -92,7 +92,7 @@ const ProductDetail = () => {
 
           <div className="grid gap-10 md:grid-cols-2">
             {/* Image */}
-            <div className="overflow-hidden rounded-2xl bg-sand p-8 md:p-12">
+            <div className="overflow-hidden rounded-2xl p-8 md:p-12">
               <img src={product.image} alt={product.name} className="mx-auto h-72 w-auto object-contain md:h-96" />
             </div>
 
