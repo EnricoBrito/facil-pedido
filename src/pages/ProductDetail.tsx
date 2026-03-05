@@ -137,8 +137,8 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Quantity (empresa/admin) */}
-              {(isEmpresa || isAdmin) && (
+              {/* Quantidade */}
+              {isAuthenticated && (
                 <div className="mb-6">
                   <p className="mb-2 text-sm font-medium text-foreground">Quantidade</p>
                   <div className="flex items-center gap-3">
