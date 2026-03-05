@@ -6,7 +6,7 @@ import { products } from "@/data/products";
 import { calculatePrice } from "@/services/PricingService";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { BarChart3, DollarSign, Link2, Users, Save, Loader2 } from "lucide-react";
+import { BarChart3, DollarSign, Link2, Users, Save, Loader2, FileText, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -44,16 +44,23 @@ const Dashboard = () => {
   const tabs = [
     { key: "vendas" as const, label: "Vendas", icon: BarChart3 },
     { key: "precos" as const, label: "Preços", icon: DollarSign },
-    { key: "contas" as const, label: "Contas", icon: Users },
+    { key: "contas" as const, label: "Relatório de Contas", icon: Users },
     { key: "webhook" as const, label: "Webhook", icon: Link2 },
   ];
+
+  // Stats para relatório de contas
+  const contasPorTipo = {
+    admin: contas.filter(c => c.tipo === "admin").length,
+    empresa: contas.filter(c => c.tipo === "empresa").length,
+    cliente: contas.filter(c => c.tipo === "cliente").length,
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 md:px-8">
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">Painel Administrativo</h1>
           <p className="mb-8 text-sm text-muted-foreground">Bem-vindo, {user?.nome ?? user?.username}</p>
 
           {/* Tabs */}
@@ -145,8 +152,9 @@ const Dashboard = () => {
                     <tr className="border-b border-border text-left text-muted-foreground">
                       <th className="pb-2 pr-4">Produto</th>
                       <th className="pb-2 pr-4">Preço Cliente</th>
-                      <th className="pb-2 pr-4">Preço Empresa (1un)</th>
-                      <th className="pb-2 pr-4">Preço Empresa (10un)</th>
+                      <th className="pb-2 pr-4">Empresa (1un)</th>
+                      <th className="pb-2 pr-4">Empresa (10un)</th>
+                      <th className="pb-2 pr-4">Empresa (50un)</th>
                       <th className="pb-2 pr-4">Margem</th>
                       <th className="pb-2">Estoque</th>
                     </tr>
@@ -155,12 +163,14 @@ const Dashboard = () => {
                     {products.map((p) => {
                       const emp1 = calculatePrice(p.price, 1, "empresa");
                       const emp10 = calculatePrice(p.price, 10, "empresa");
+                      const emp50 = calculatePrice(p.price, 50, "empresa");
                       return (
                         <tr key={p.id} className="border-b border-border/50">
                           <td className="py-3 pr-4 font-medium text-foreground">{p.name}</td>
                           <td className="py-3 pr-4 text-foreground">{formatPrice(p.price)}</td>
                           <td className="py-3 pr-4 text-foreground">{formatPrice(emp1.finalPrice)}</td>
                           <td className="py-3 pr-4 text-foreground">{formatPrice(emp10.finalPrice)}</td>
+                          <td className="py-3 pr-4 text-foreground">{formatPrice(emp50.finalPrice)}</td>
                           <td className="py-3 pr-4 text-accent font-medium">35%</td>
                           <td className="py-3">
                             <span className={`font-medium ${p.stock > 0 ? "text-foreground" : "text-destructive"}`}>
@@ -176,22 +186,90 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Contas */}
+          {/* Relatório de Contas */}
           {activeTab === "contas" && (
-            <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-              <h3 className="mb-4 font-semibold text-foreground">Contas Registradas</h3>
-              <div className="space-y-3">
-                {contas.map((acc) => (
-                  <div key={acc.id} className="flex items-center justify-between rounded-lg bg-secondary p-4">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{acc.nome}</p>
-                      <p className="text-xs text-muted-foreground">@{acc.username}</p>
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-accent">
-                      {acc.tipo}
-                    </span>
+            <div className="space-y-6">
+              {/* Resumo */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield className="h-4 w-4 text-accent" />
+                    <p className="text-xs font-medium text-muted-foreground">Administradores</p>
                   </div>
-                ))}
+                  <p className="text-2xl font-bold text-foreground">{contasPorTipo.admin}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-4 w-4 text-accent" />
+                    <p className="text-xs font-medium text-muted-foreground">Empresas</p>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{contasPorTipo.empresa}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4 text-accent" />
+                    <p className="text-xs font-medium text-muted-foreground">Clientes</p>
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{contasPorTipo.cliente}</p>
+                </div>
+              </div>
+
+              {/* Tabela detalhada */}
+              <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Relatório Completo de Contas</h3>
+                  <span className="text-xs text-muted-foreground">{contas.length} contas registradas</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left text-muted-foreground">
+                        <th className="pb-2 pr-4">ID</th>
+                        <th className="pb-2 pr-4">Nome</th>
+                        <th className="pb-2 pr-4">Login</th>
+                        <th className="pb-2 pr-4">E-mail</th>
+                        <th className="pb-2 pr-4">Tipo de Conta</th>
+                        <th className="pb-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contas.map((acc) => {
+                        const pedidosConta = pedidos.filter(p => p.idUsuario === acc.id);
+                        const totalGasto = pedidosConta.reduce((s, p) => s + p.valorTotal, 0);
+                        return (
+                          <tr key={acc.id} className="border-b border-border/50">
+                            <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{acc.id}</td>
+                            <td className="py-3 pr-4 font-medium text-foreground">{acc.nome}</td>
+                            <td className="py-3 pr-4 text-foreground">@{acc.username}</td>
+                            <td className="py-3 pr-4 text-muted-foreground text-xs">{acc.email}</td>
+                            <td className="py-3 pr-4">
+                              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                acc.tipo === "admin"
+                                  ? "bg-accent/10 text-accent"
+                                  : acc.tipo === "empresa"
+                                  ? "bg-primary/10 text-primary-foreground"
+                                  : "bg-secondary text-secondary-foreground"
+                              }`}>
+                                {acc.tipo === "admin" ? "Administrador" : acc.tipo === "empresa" ? "Empresa" : "Cliente"}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-full bg-green-500" />
+                                <span className="text-xs text-foreground">Ativo</span>
+                              </div>
+                              {pedidosConta.length > 0 && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {pedidosConta.length} pedido{pedidosConta.length > 1 ? "s" : ""} · {formatPrice(totalGasto)}
+                                </p>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

@@ -12,9 +12,11 @@ export interface PricingResult {
 const DESCONTO_BASE_EMPRESA = 3;
 
 const VOLUME_DISCOUNTS = [
-  { min: 100, percent: 15 },
-  { min: 30, percent: 10 },
+  { min: 100, percent: 18 },
+  { min: 50, percent: 12 },
+  { min: 20, percent: 8 },
   { min: 10, percent: 5 },
+  { min: 5, percent: 3 },
   { min: 1, percent: DESCONTO_BASE_EMPRESA },
 ];
 
@@ -34,12 +36,11 @@ export function calculatePrice(
     let finalPrice = basePrice - discount;
 
     // Proteção: empresa NUNCA pode pagar mais que cliente
-    if (finalPrice > basePrice) {
-      console.error("[ServicoPreco] ERRO: preço empresa maior que cliente. Aplicando fallback.");
+    if (finalPrice >= basePrice) {
       finalPrice = basePrice * (1 - DESCONTO_BASE_EMPRESA / 100);
     }
 
-    return { basePrice, finalPrice, discount, discountPercent };
+    return { basePrice, finalPrice, discount: basePrice - finalPrice, discountPercent };
   }
 
   if (role === "admin") {
@@ -47,7 +48,7 @@ export function calculatePrice(
     const empresaPrice = basePrice * (1 - empresaDiscount / 100);
 
     // Proteção admin
-    const safeEmpresaPrice = empresaPrice > basePrice ? basePrice * 0.97 : empresaPrice;
+    const safeEmpresaPrice = empresaPrice >= basePrice ? basePrice * 0.97 : empresaPrice;
 
     return {
       basePrice,

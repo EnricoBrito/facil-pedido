@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { products } from "@/data/products";
+import { products, categories } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,17 +10,26 @@ const AllProducts = () => {
   const [searchParams] = useSearchParams();
   const queryParam = searchParams.get("q") || "";
   const [search, setSearch] = useState(queryParam);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [maxPrice, setMaxPrice] = useState(10000);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+      const matchesPrice = p.price <= maxPrice;
       const matchesStock = inStockOnly ? p.inStock : true;
-      return matchesSearch && matchesPrice && matchesStock;
+      const matchesCategory = selectedCategory ? p.category === selectedCategory : true;
+      return matchesSearch && matchesPrice && matchesStock && matchesCategory;
     });
-  }, [search, priceRange, inStockOnly]);
+  }, [search, maxPrice, inStockOnly, selectedCategory]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setMaxPrice(10000);
+    setInStockOnly(false);
+    setSelectedCategory("");
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -30,7 +39,7 @@ const AllProducts = () => {
           <h1 className="mb-8 text-2xl font-bold text-foreground">Todos os Produtos</h1>
 
           <div className="grid gap-8 lg:grid-cols-4">
-            {/* Filters */}
+            {/* Filtros */}
             <aside className="lg:col-span-1">
               <div className="rounded-xl border border-border bg-card p-5 shadow-soft space-y-5">
                 <div>
@@ -44,16 +53,30 @@ const AllProducts = () => {
                 </div>
 
                 <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Categoria</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Todas</option>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    Faixa de Preço: R${priceRange[0]} - R${priceRange[1]}
+                    Preço até: R$ {maxPrice.toLocaleString("pt-BR")}
                   </label>
                   <input
                     type="range"
-                    min={0}
+                    min={400}
                     max={10000}
                     step={100}
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(Number(e.target.value))}
                     className="w-full accent-primary"
                   />
                 </div>
@@ -67,11 +90,19 @@ const AllProducts = () => {
                   />
                   Apenas em estoque
                 </label>
+
+                <button
+                  onClick={clearFilters}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                >
+                  Limpar filtros
+                </button>
               </div>
             </aside>
 
-            {/* Grid */}
+            {/* Grade */}
             <div className="lg:col-span-3">
+              <p className="mb-4 text-sm text-muted-foreground">{filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}</p>
               {filtered.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filtered.map((product, i) => (
